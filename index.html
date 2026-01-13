@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Intelligence</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Import Map to handle React modules in the browser -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+      }
+    }
+    </script>
+
+    <!-- Babel for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+          LayoutDashboard, 
+          Plus, 
+          Search, 
+          Filter, 
+          ChevronRight, 
+          ChevronDown, 
+          Sparkles, 
+          Check, 
+          X, 
+          ArrowLeft,
+          BarChart3,
+          PieChart,
+          Calendar,
+          Layers,
+          Settings,
+          MoreHorizontal,
+          Info,
+          Library,
+          Link,
+          Grip,
+          Loader2,
+          Database,
+          FileText,
+          Cloud,
+          HardDrive,
+          Clock,
+          Play,
+          Pause,
+          Trash2,
+          Server,
+          ArrowRight,
+          GitMerge,
+          Workflow,
+          RefreshCw,
+          Activity,
+          List,
+          ShieldCheck,
+          Edit3,
+          Save,
+          AlertCircle,
+          Table,
+          Columns,
+          Upload,
+          BookTemplate,
+          Maximize2,
+          Sigma,
+          Zap,
+          MoreVertical,
+          Pencil,
+          FileInput
+        } from 'lucide-react';
+
+        // --- Mock Data ---
+
+        const INITIAL_CAMPAIGNS = [
+          { id: 'CMP-101', name: 'US_Q4_25_Launch_Teaser_Vid', channel: 'Meta Ads', spend: '$12,500', impressions: '850K', objective: 'Awareness', date: '2025-10-01' },
+          { id: 'CMP-102', name: 'Q4_Product_Launch_Email_Seq', channel: 'Email', spend: '$500', impressions: '45K', objective: 'Conversion', date: '2025-10-02' },
+          { id: 'CMP-103', name: 'Search_Brand_Protect_2025', channel: 'Google Ads', spend: '$45,000', impressions: '1.2M', objective: 'Brand Protection', date: '2025-01-01' },
+          { id: 'CMP-104', name: 'Influencer_Push_IG_Fall25', channel: 'Instagram', spend: '$22,000', impressions: '2.1M', objective: 'Engagement', date: '2025-09-15' },
+          { id: 'CMP-105', name: 'Q4_Launch_Retargeting_Display', channel: 'Google Display', spend: '$8,200', impressions: '600K', objective: 'Conversion', date: '2025-10-10' },
+          { id: 'CMP-106', name: 'Webinar_Invite_Q4_Features', channel: 'LinkedIn', spend: '$5,000', impressions: '120K', objective: 'Lead Gen', date: '2025-10-05' },
+          { id: 'CMP-107', name: 'Evergreen_Nurture_Stream_A', channel: 'Email', spend: '$1,200', impressions: 'N/A', objective: 'Nurture', date: '2025-01-01' },
+          { id: 'CMP-108', name: 'US_Holiday_Sale_FB_Carousel', channel: 'Meta Ads', spend: '$15,000', impressions: '900K', objective: 'Sales', date: '2025-11-20' },
+          { id: 'CMP-109', name: 'BlackFriday_Search_Promo', channel: 'Google Ads', spend: '$30,000', impressions: '1.5M', objective: 'Sales', date: '2025-11-25' },
+        ];
+
+        const INITIAL_ANCHORS = [
+          { id: 'ANC-001', name: 'Summer 2025 Collection', status: 'Active', campaignCount: 12, totalSpend: '$145k', roas: '3.2' },
+          { id: 'ANC-002', name: 'Brand Awareness 2025', status: 'Active', campaignCount: 8, totalSpend: '$82k', roas: '1.8' },
+        ];
+
+        const INITIAL_PIPELINES = [
+          { id: 'PL-101', name: 'Facebook Ads Daily', source: 'Meta Ads', targetModel: 'Ad Cost Standard', schedule: 'Daily @ 06:00', status: 'Active' },
+          { id: 'PL-102', name: 'CRM Contacts Sync', source: 'Salesforce', targetModel: 'Contact Master', schedule: 'Hourly', status: 'Active' },
+        ];
+
+        const INITIAL_TEMPLATES = [
+          { id: 'TPL-001', name: 'Ad Cost Standard', description: 'Standardized schema for advertising cost data across platforms.', fields: [{ name: 'Date', type: 'Date' }, { name: 'Campaign_Name', type: 'Text' }, { name: 'Cost', type: 'Currency' }, { name: 'Impressions', type: 'Number' }] },
+          { id: 'TPL-002', name: 'Contact Master', description: 'Unified view of customer contacts and lifecycle stages.', fields: [{ name: 'Email', type: 'Email' }, { name: 'First_Name', type: 'Text' }, { name: 'Last_Name', type: 'Text' }, { name: 'Lifecycle_Stage', type: 'Text' }] },
+          { id: 'TPL-003', name: 'Email Engagement Standard', description: 'Generic model for 3rd-party email data (HubSpot, Marketo).', fields: [{ name: 'Event_Date', type: 'Date' }, { name: 'Campaign_ID', type: 'Text' }, { name: 'Email_Name', type: 'Text' }, { name: 'Opens', type: 'Number' }, { name: 'Clicks', type: 'Number' }, { name: 'Bounces', type: 'Number' }] },
+        ];
+
+        const INITIAL_MAPPING_TEMPLATES = [
+          { id: 'MP-001', name: 'Facebook Ads Standard Map', targetModel: 'Ad Cost Standard', mapping: { 'Date': 'date_start', 'Campaign_Name': 'campaign_name', 'Cost': 'spend', 'Impressions': 'impressions' } },
+          { id: 'MP-002', name: 'HubSpot Email Map', targetModel: 'Email Engagement Standard', mapping: { 'Event_Date': 'occurredAt', 'Campaign_ID': 'campaignId', 'Email_Name': 'emailTitle', 'Opens': 'openCount', 'Clicks': 'clickCount', 'Bounces': 'bounceCount' } }
+        ];
+
+        const INITIAL_AGGREGATIONS = [
+          { id: 'AGG-001', name: 'Hourly Email Summary', sourceObject: 'Raw_Email_Events', summaryObject: 'Engagement_Summary', frequency: 'Hourly', scope: 'Incremental', lastRun: '15 mins ago', status: 'Active' },
+          { id: 'AGG-002', name: 'Daily Campaign Rollup', sourceObject: 'All_Campaigns', summaryObject: 'Campaign_Daily_Agg', frequency: 'Daily @ 01:00', scope: 'Full', lastRun: '12 hours ago', status: 'Active' },
+        ];
+
+        const AUTONOMOUS_SUGGESTIONS = [
+          {
+            id: 'SUG-001',
+            reason: "I found 3 campaigns related to 'Holiday Sale' spanning multiple channels with similar start dates.",
+            suggestedName: "2025 Holiday Push",
+            campaigns: ['CMP-108', 'CMP-109']
+          }
+        ];
+
+        const SOURCE_OPTIONS = [
+          { id: 's3', name: 'Amazon S3', icon: Cloud, description: 'Ingest parquet or csv files' },
+          { id: 'gdrive', name: 'Google Drive', icon: HardDrive, description: 'Connect specific folders' },
+          { id: 'gsheets', name: 'Google Sheets', icon: FileText, description: 'Live spreadsheet sync' },
+          { id: 'redshift', name: 'Amazon Redshift', icon: Database, description: 'Direct warehouse query' },
+          { id: 'salesforce', name: 'Salesforce', icon: Cloud, description: 'CRM Objects & Reports' },
+          { id: 'snowflake', name: 'Snowflake', icon: Server, description: 'Data Cloud import' },
+        ];
+
+        const INITIAL_ENRICHMENTS = [
+          { id: 'ENR-001', name: 'Global Sales Data Enrichment', source: 'Snowflake', schedule: 'Daily @ 02:00 AM', status: 'Active', lastRun: '2 hours ago', description: 'Enriches marketing impressions with downstream sales conversions from the EDW.' },
+          { id: 'ENR-002', name: 'CRM Contact Sync', source: 'Salesforce', schedule: 'Real-time', status: 'Active', lastRun: '5 mins ago', description: 'Syncs lead status changes to campaign targeting audiences.' },
+        ];
+
+        const INITIAL_PATTERNS = [
+            { 
+                id: 'PTN-001', 
+                name: 'Standard Campaign Naming', 
+                status: 'Active', 
+                sourceField: 'Campaign Name', 
+                delimiter: '_', 
+                example: 'US_2025_Q4_Brand_Awareness',
+                validFrom: '2025-01-01',
+                validTo: '2025-12-31',
+                tokens: [
+                    { position: 1, name: 'Geo', validation: 'US, UK, CA, FR', enrichmentId: null },
+                    { position: 2, name: 'Year', validation: '2024, 2025, 2026', enrichmentId: null },
+                    { position: 3, name: 'Quarter', validation: 'Q1, Q2, Q3, Q4', enrichmentId: null },
+                    { position: 4, name: 'Product', validation: null, enrichmentId: 'ENR-001' },
+                    { position: 5, name: 'Objective', validation: 'Awareness, Traffic, Conversion', enrichmentId: null }
+                ]
+            },
+            { 
+                id: 'PTN-002', 
+                name: 'Social Ad Set Pattern', 
+                status: 'Draft', 
+                sourceField: 'Ad Set Name', 
+                delimiter: '-', 
+                example: 'FB-Retargeting-HighIntent',
+                validFrom: '2025-06-01',
+                validTo: null,
+                tokens: [
+                    { position: 1, name: 'Platform', validation: 'FB, IG, TT', enrichmentId: null },
+                    { position: 2, name: 'Audience Type', validation: null, enrichmentId: 'ENR-002' },
+                    { position: 3, name: 'Funnel Stage', validation: 'HighIntent, LowIntent', enrichmentId: null }
+                ]
+            }
+        ];
+
+        // --- API Helper ---
+        // Note: In a static GitHub Page, this API key needs to be managed carefully or a proxy used. 
+        // For this demo, we'll keep it empty or use a placeholder.
+        const callGemini = async (prompt) => {
+          try {
+            const apiKey = ""; // Set API Key here for local testing or use environment variable pattern if supported
+            if (!apiKey) return null; // Prevent errors if no key
+
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }]
+                })
+              }
+            );
+            
+            if (!response.ok) {
+               throw new Error(`API Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          } catch (error) {
+            console.error("Gemini API Error:", error);
+            return null;
+          }
+        };
+
+        // --- Components ---
+
+        const Sidebar = ({ activeTab, setActiveTab }) => (
+          <div className="w-64 bg-white text-slate-600 flex flex-col h-full border-r border-slate-200 hidden md:flex font-sans">
+            <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+                <div className="text-indigo-600">
+                   <Grip size={28} />
+                </div>
+                <h1 className="text-slate-800 font-semibold text-lg leading-tight">
+                  Marketing<br/>Intelligence
+                </h1>
+            </div>
+            
+            <nav className="flex-1 px-3 py-6 space-y-6 overflow-y-auto">
+              
+              {/* Data Management Section */}
+              <div className="space-y-1">
+                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Data Management</h3>
+                
+                <div 
+                  onClick={() => setActiveTab('pipelines')}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors ${
+                    activeTab === 'pipelines' 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <ArrowRight size={18} className="rotate-45" /> {/* Using Arrow as generic pipeline icon for now */}
+                  <span>Data Pipelines</span>
+                </div>
+
+                <div 
+                  onClick={() => setActiveTab('templates')}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors ${
+                    activeTab === 'templates' 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <BookTemplate size={18} />
+                  <span>Template Hub</span>
+                </div>
+
+                <div 
+                  onClick={() => setActiveTab('aggregations')}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors ${
+                    activeTab === 'aggregations' 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <Sigma size={18} />
+                  <span>Data Aggregation</span>
+                </div>
+
+                <div 
+                  onClick={() => setActiveTab('anchors')}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors ${
+                    activeTab === 'anchors' 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <Layers size={18} />
+                  <span>Anchor Campaigns</span>
+                </div>
+
+                <div className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium cursor-pointer text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                  <Library size={18} />
+                  <span>Use Case Library</span>
+                </div>
+              </div>
+
+              {/* Harmonization Section (Renamed & Restructured) */}
+              <div className="space-y-1">
+                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Harmonization</h3>
+                
+                <div 
+                  onClick={() => setActiveTab('data_enrichments')}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors ${
+                    activeTab === 'data_enrichments' 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <Database size={18} />
+                  <span>Data Enrichments</span>
+                </div>
+
+                <div 
+                  onClick={() => setActiveTab('patterns')}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors ${
+                    activeTab === 'patterns' 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <Workflow size={18} />
+                  <span>Patterns</span>
+                </div>
+              </div>
+
+              {/* Analytics Section */}
+              <div className="space-y-1">
+                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Marketing Analytics</h3>
+                
+                <div className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium cursor-pointer text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                  <PieChart size={18} />
+                  <span>Attribution</span>
+                </div>
+              </div>
+
+            </nav>
+            
+            <div className="p-4 border-t border-slate-200">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium cursor-pointer text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                <Settings size={18} />
+                <span>Settings</span>
+              </div>
+            </div>
+          </div>
+        );
+
+        const ConfidenceBadge = ({ score }) => {
+          let colorClass = "bg-green-100 text-green-700 border-green-200";
+          if (score < 80) colorClass = "bg-yellow-100 text-yellow-700 border-yellow-200";
+          if (score < 50) colorClass = "bg-red-100 text-red-700 border-red-200";
+
+          return (
+            <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${colorClass}`}>
+              {score}% Match
+            </span>
+          );
+        };
+
+        const CreateEnrichmentModal = ({ isOpen, onClose, onSave }) => {
+          const [name, setName] = useState('');
+          const [source, setSource] = useState('Snowflake');
+
+          if (!isOpen) return null;
+
+          return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+              <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden p-6 animate-in fade-in zoom-in duration-200">
+                <h2 className="text-lg font-bold text-slate-800 mb-4">Create New Enrichment</h2>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Enrichment Name</label>
+                        <input 
+                            type="text" 
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                            placeholder="e.g. Product Lookup"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Source System</label>
+                        <select 
+                            value={source}
+                            onChange={(e) => setSource(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                        >
+                            {SOURCE_OPTIONS.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div className="mt-6 flex justify-end gap-2">
+                    <button onClick={onClose} className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium transition-colors">Cancel</button>
+                    <button 
+                        onClick={() => onSave({ name, source })}
+                        disabled={!name}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors shadow-sm"
+                    >
+                        Create
+                    </button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const SelectDataModelModal = ({ isOpen, onClose, onSelect, templates, onCreateNew }) => {
+          const [selectedId, setSelectedId] = useState(templates[0]?.id);
+
+          useEffect(() => {
+            if (isOpen && templates.length > 0) {
+              setSelectedId(templates[0].id);
+            }
+          }, [isOpen, templates]);
+
+          if (!isOpen) return null;
+
+          const selectedTemplate = templates.find(t => t.id === selectedId);
+
+          return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[650px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+                
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                    <h2 className="text-lg font-bold text-slate-800">Select Data Model</h2>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+                        <X size={24} />
+                    </button>
+                </div>
+
+                {/* Content Body */}
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Left Pane: Gallery */}
+                    <div className="w-1/3 border-r border-slate-200 bg-slate-50 flex flex-col">
+                        <div className="p-4 border-b border-slate-100">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                                <input type="text" placeholder="Search models..." className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500" />
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                            {templates.map(t => (
+                                <div 
+                                    key={t.id}
+                                    onClick={() => setSelectedId(t.id)}
+                                    className={`p-4 rounded-lg border cursor-pointer transition-all ${selectedId === t.id ? 'bg-white border-indigo-600 shadow-md' : 'bg-white border-slate-200 hover:border-indigo-300'}`}
+                                >
+                                    <div className="font-semibold text-slate-800 mb-1">{t.name}</div>
+                                    <div className="text-xs text-slate-500 line-clamp-2">{t.description || 'No description available.'}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="p-4 border-t border-slate-200 bg-white">
+                            <button 
+                                onClick={onCreateNew}
+                                className="w-full py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Plus size={16} /> Create New Model
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Right Pane: Details */}
+                    <div className="w-2/3 bg-white flex flex-col">
+                        {selectedTemplate ? (
+                            <>
+                                <div className="p-8 border-b border-slate-100">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Table className="text-indigo-600" size={24} />
+                                        <h3 className="text-2xl font-bold text-slate-900">{selectedTemplate.name}</h3>
+                                    </div>
+                                    <p className="text-slate-600 text-base">{selectedTemplate.description || 'No description provided.'}</p>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-8">
+                                    <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Schema Definition</h4>
+                                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Field Name</th>
+                                                    <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Data Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {selectedTemplate.fields.map((f, i) => (
+                                                    <tr key={i}>
+                                                        <td className="px-6 py-3 text-sm text-slate-700 font-medium">{f.name}</td>
+                                                        <td className="px-6 py-3 text-sm text-slate-500 font-mono">{f.type}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
+                                    <button 
+                                        onClick={() => onSelect(selectedTemplate.name)}
+                                        className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2"
+                                    >
+                                        Use This Model <Check size={16} />
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-slate-400">
+                                <p>Select a model to preview</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const CreateDataModelModal = ({ isOpen, onClose, onSave, initialData }) => {
+          const [step, setStep] = useState(1);
+          const [modelName, setModelName] = useState('');
+          const [fields, setFields] = useState([{ name: '', type: 'Text' }]);
+          const [selectedMethod, setSelectedMethod] = useState(null);
+
+          useEffect(() => {
+            if (isOpen) {
+                if (initialData) {
+                    // Edit Mode
+                    setStep(2);
+                    setModelName(initialData.name);
+                    setFields(initialData.fields);
+                    setSelectedMethod('manual'); // Default to manual view for editing
+                } else {
+                    // Create Mode
+                    setStep(1);
+                    setModelName('');
+                    setFields([{ name: '', type: 'Text' }]);
+                    setSelectedMethod(null);
+                }
+            }
+          }, [isOpen, initialData]);
+
+          if (!isOpen) return null;
+
+          const addField = () => setFields([...fields, { name: '', type: 'Text' }]);
+          const updateField = (idx, key, val) => {
+            const newFields = [...fields];
+            newFields[idx][key] = val;
+            setFields(newFields);
+          };
+          const removeField = (idx) => {
+            setFields(fields.filter((_, i) => i !== idx));
+          };
+
+          const handleNext = () => {
+              if (selectedMethod) {
+                  setStep(2);
+                  if (selectedMethod === 'csv' && !initialData) {
+                      // Simulate CSV import by pre-filling fields
+                      setFields([
+                          { name: 'Campaign_ID', type: 'Text' },
+                          { name: 'Impressions', type: 'Number' },
+                          { name: 'Clicks', type: 'Number' },
+                          { name: 'Spend', type: 'Currency' }
+                      ]);
+                      setModelName('Imported Campaign Data');
+                  }
+              }
+          };
+
+          const handleSave = () => {
+            if (!modelName) return;
+            onSave({ 
+                id: initialData ? initialData.id : null,
+                name: modelName, 
+                fields 
+            });
+          };
+
+          const methods = [
+              { id: 'manual', title: 'Create Manually', icon: Edit3, desc: 'Define schema field by field.' },
+              { id: 'csv', title: 'Import from CSV', icon: Upload, desc: 'Infer schema from a file header.' },
+              { id: 'library', title: 'Use Template', icon: BookTemplate, desc: 'Start from a standard model.' }
+          ];
+
+          return (
+            <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl h-[600px] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+                
+                {/* Header */}
+                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-800">
+                            {initialData ? 'Edit Data Model' : 'Create Custom Data Model'}
+                        </h2>
+                        <p className="text-slate-500 text-sm mt-1">
+                            {step === 1 ? 'Select a method to begin' : 'Define Schema'}
+                        </p>
+                    </div>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+                        <X size={24} />
+                    </button>
+                </div>
+                
+                {/* Content */}
+                <div className="p-8 overflow-y-auto flex-1 bg-slate-50">
+                    {step === 1 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {methods.map((m) => {
+                                const Icon = m.icon;
+                                const isSelected = selectedMethod === m.id;
+                                return (
+                                    <div 
+                                        key={m.id}
+                                        onClick={() => setSelectedMethod(m.id)}
+                                        className={`p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md bg-white flex flex-col items-center text-center gap-3 ${isSelected ? 'border-indigo-600 ring-4 ring-indigo-50' : 'border-slate-200 hover:border-indigo-200'}`}
+                                    >
+                                        <div className={`p-4 rounded-full ${isSelected ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                                            <Icon size={28} />
+                                        </div>
+                                        <div>
+                                            <h3 className={`font-semibold ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>{m.title}</h3>
+                                            <p className="text-xs text-slate-500 mt-1">{m.desc}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div className="max-w-xl mx-auto space-y-6">
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Model Name</label>
+                                    <input 
+                                        type="text" 
+                                        value={modelName}
+                                        onChange={(e) => setModelName(e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        placeholder="e.g. Aggregated Campaign Stats"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2 flex justify-between">
+                                        Schema Fields
+                                        <span className="text-xs font-normal text-slate-400">
+                                            {selectedMethod === 'csv' ? ' inferred from file' : ''}
+                                        </span>
+                                    </label>
+                                    <div className="space-y-3">
+                                        {fields.map((field, idx) => (
+                                            <div key={idx} className="flex gap-2 items-center">
+                                                <input 
+                                                    type="text"
+                                                    placeholder="Field Name"
+                                                    value={field.name}
+                                                    onChange={(e) => updateField(idx, 'name', e.target.value)}
+                                                    className="flex-1 px-3 py-2 border border-slate-300 rounded-md text-sm outline-none focus:border-indigo-500"
+                                                />
+                                                <select 
+                                                    value={field.type}
+                                                    onChange={(e) => updateField(idx, 'type', e.target.value)}
+                                                    className="w-32 px-2 py-2 border border-slate-300 rounded-md text-sm outline-none bg-white"
+                                                >
+                                                    <option>Text</option>
+                                                    <option>Number</option>
+                                                    <option>Date</option>
+                                                    <option>Currency</option>
+                                                    <option>Boolean</option>
+                                                </select>
+                                                <button onClick={() => removeField(idx)} className="text-slate-400 hover:text-red-500 p-1">
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button onClick={addField} className="mt-4 w-full py-2 border border-dashed border-slate-300 rounded-lg text-sm text-slate-500 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 transition-colors flex items-center justify-center gap-1">
+                                        <Plus size={14} /> Add Another Field
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="px-8 py-5 border-t border-slate-100 bg-white flex justify-between items-center">
+                    <button 
+                        onClick={() => step === 2 && !initialData ? setStep(1) : onClose()} 
+                        className="text-slate-500 hover:text-slate-800 font-medium text-sm px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                    >
+                        {step === 2 && !initialData ? 'Back' : 'Cancel'}
+                    </button>
+                    <button 
+                        onClick={() => step === 1 ? handleNext() : handleSave()}
+                        disabled={(step === 1 && !selectedMethod) || (step === 2 && (!modelName || fields.length === 0))}
+                        className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
+                    >
+                        {step === 1 ? <>Next Step <ArrowRight size={16}/></> : (initialData ? 'Update Template' : 'Create Template')}
+                    </button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const AggregationJobModal = ({ isOpen, onClose, onSave }) => {
+          const [step, setStep] = useState(1);
+          const [config, setConfig] = useState({ name: '', sourceObject: 'Raw_Email_Events', summaryObject: 'Engagement_Summary' });
+          const [metrics, setMetrics] = useState({ dimensions: ['Day', 'Campaign'], metrics: ['Opens', 'Clicks'] });
+          const [schedule, setSchedule] = useState({ frequency: 'Hourly', scope: 'Incremental' });
+
+          if (!isOpen) return null;
+
+          const handleNext = () => {
+            if (step < 3) setStep(step + 1);
+            else {
+              onSave({
+                ...config,
+                ...metrics,
+                ...schedule
+              });
+              setStep(1);
+            }
+          };
+
+          return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl h-[600px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+                
+                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">New Aggregation Job</h2>
+                    <p className="text-slate-500 text-sm mt-1">Step {step} of 3</p>
+                  </div>
+                  <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="flex-1 bg-slate-50 overflow-y-auto p-8">
+                  {step === 1 && (
+                    <div className="space-y-6">
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 className="font-semibold text-slate-800 mb-4">Job Details</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Job Name</label>
+                                    <input 
+                                        type="text"
+                                        value={config.name}
+                                        onChange={(e) => setConfig({...config, name: e.target.value})}
+                                        placeholder="e.g. Daily Email Rollup"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Source Object</label>
+                                    <select 
+                                        value={config.sourceObject}
+                                        onChange={(e) => setConfig({...config, sourceObject: e.target.value})}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white outline-none"
+                                    >
+                                        <option>Raw_Email_Events</option>
+                                        <option>Raw_Web_Visits</option>
+                                        <option>All_Campaign_Records</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Target Summary Object</label>
+                                    <input 
+                                        type="text"
+                                        value={config.summaryObject}
+                                        onChange={(e) => setConfig({...config, summaryObject: e.target.value})}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  )}
+
+                  {step === 2 && (
+                    <div className="space-y-6">
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 className="font-semibold text-slate-800 mb-4">Aggregation Logic</h3>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Group By (Dimensions)</label>
+                                    <div className="space-y-2 border border-slate-200 rounded-lg p-3 max-h-48 overflow-y-auto">
+                                        {['Day', 'Campaign', 'Flow', 'Segment', 'Creative', 'Region'].map(dim => (
+                                            <label key={dim} className="flex items-center gap-2 text-sm text-slate-600">
+                                                <input 
+                                                    type="checkbox"
+                                                    checked={metrics.dimensions.includes(dim)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) setMetrics({...metrics, dimensions: [...metrics.dimensions, dim]});
+                                                        else setMetrics({...metrics, dimensions: metrics.dimensions.filter(d => d !== dim)});
+                                                    }}
+                                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                />
+                                                {dim}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Calculate (Metrics)</label>
+                                    <div className="space-y-2 border border-slate-200 rounded-lg p-3 max-h-48 overflow-y-auto">
+                                        {['Opens', 'Clicks', 'Bounces', 'Unsubscribes', 'Revenue', 'Conversions'].map(met => (
+                                            <label key={met} className="flex items-center gap-2 text-sm text-slate-600">
+                                                <input 
+                                                    type="checkbox"
+                                                    checked={metrics.metrics.includes(met)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) setMetrics({...metrics, metrics: [...metrics.metrics, met]});
+                                                        else setMetrics({...metrics, metrics: metrics.metrics.filter(m => m !== met)});
+                                                    }}
+                                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                />
+                                                Sum({met})
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  )}
+
+                  {step === 3 && (
+                    <div className="space-y-6">
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 className="font-semibold text-slate-800 mb-4">Schedule & Scope</h3>
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Run Frequency</label>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {['Hourly', 'Daily', 'Weekly'].map(freq => (
+                                            <button
+                                                key={freq}
+                                                onClick={() => setSchedule({...schedule, frequency: freq})}
+                                                className={`py-2 px-4 rounded-lg border text-sm font-medium ${schedule.frequency === freq ? 'bg-indigo-50 border-indigo-600 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'}`}
+                                            >
+                                                {freq}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Processing Scope</label>
+                                    <div className="space-y-3">
+                                        <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${schedule.scope === 'Incremental' ? 'bg-indigo-50 border-indigo-600' : 'bg-white border-slate-200'}`}>
+                                            <input 
+                                                type="radio" 
+                                                name="scope" 
+                                                value="Incremental"
+                                                checked={schedule.scope === 'Incremental'} 
+                                                onChange={() => setSchedule({...schedule, scope: 'Incremental'})}
+                                                className="mt-1 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <div>
+                                                <div className="font-medium text-slate-800">Incremental (Recommended)</div>
+                                                <div className="text-xs text-slate-500">Process only new or changed records since last run. Saves credits.</div>
+                                            </div>
+                                        </label>
+                                        <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${schedule.scope === 'Full' ? 'bg-indigo-50 border-indigo-600' : 'bg-white border-slate-200'}`}>
+                                            <input 
+                                                type="radio" 
+                                                name="scope" 
+                                                value="Full"
+                                                checked={schedule.scope === 'Full'} 
+                                                onChange={() => setSchedule({...schedule, scope: 'Full'})}
+                                                className="mt-1 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <div>
+                                                <div className="font-medium text-slate-800">Full Refresh</div>
+                                                <div className="text-xs text-slate-500">Re-calculate entire dataset. High credit consumption.</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-8 py-5 border-t border-slate-100 bg-white flex justify-between items-center">
+                   <button 
+                      onClick={() => step > 1 ? setStep(step - 1) : onClose()}
+                      className="text-slate-500 hover:text-slate-800 font-medium text-sm px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                   >
+                      {step === 1 ? 'Cancel' : 'Back'}
+                   </button>
+                   <div className="flex items-center gap-2">
+                      <div className="flex gap-1 mr-4">
+                         {[1, 2, 3].map(i => (
+                            <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i === step ? 'bg-indigo-600' : 'bg-slate-200'}`} />
+                         ))}
+                      </div>
+                      <button 
+                        onClick={handleNext}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition-all flex items-center gap-2"
+                      >
+                        {step === 3 ? 'Activate Job' : 'Next Step'}
+                        {step !== 3 && <ArrowRight size={16} />}
+                      </button>
+                   </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const RetrievalModal = ({ isOpen, onClose, onSave, selectedEnrichment }) => {
+          const [step, setStep] = useState(1); // 1: Source, 2: Config, 3: Schedule
+          const [selectedSource, setSelectedSource] = useState(null);
+          const [config, setConfig] = useState({ name: '', path: '', auth: '' });
+          const [schedule, setSchedule] = useState({ frequency: 'daily', time: '09:00' });
+
+          useEffect(() => {
+            if (isOpen) {
+                setStep(1);
+                setConfig({ name: selectedEnrichment?.name || '', path: '', auth: '' });
+            }
+          }, [isOpen, selectedEnrichment]);
+
+          if (!isOpen) return null;
+
+          const handleNext = () => {
+            if (step < 3) setStep(step + 1);
+            else {
+              onSave({
+                source: selectedSource.name,
+                name: config.name || `${selectedSource.name} Pipeline`,
+                schedule: schedule.frequency === 'realtime' ? 'Real-time' : `${schedule.frequency.charAt(0).toUpperCase() + schedule.frequency.slice(1)} @ ${schedule.time}`,
+              });
+            }
+          };
+
+          return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[600px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">Automate Data Retrieval</h2>
+                    <p className="text-slate-500 text-sm mt-1">
+                        Configuring for: <span className="font-medium text-indigo-600">{selectedEnrichment?.name}</span>
+                    </p>
+                  </div>
+                  <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+                    <X size={24} />
+                  </button>
+                </div>
+                <div className="flex-1 bg-slate-50 overflow-y-auto p-8">
+                  {step === 1 && (
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Select Data Source</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {SOURCE_OPTIONS.map((source) => {
+                            const Icon = source.icon;
+                            const isSelected = selectedSource?.id === source.id;
+                            return (
+                            <div 
+                                key={source.id}
+                                onClick={() => setSelectedSource(source)}
+                                className={`p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md bg-white flex flex-col items-center text-center gap-3 ${isSelected ? 'border-indigo-600 ring-4 ring-indigo-50' : 'border-slate-200 hover:border-indigo-200'}`}
+                            >
+                                <div className={`p-3 rounded-full ${isSelected ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                                <Icon size={32} />
+                                </div>
+                                <div>
+                                <h3 className={`font-semibold ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>{source.name}</h3>
+                                <p className="text-xs text-slate-500 mt-1">{source.description}</p>
+                                </div>
+                            </div>
+                            );
+                        })}
+                        </div>
+                    </div>
+                  )}
+                  {step === 2 && (
+                    <div className="max-w-xl mx-auto space-y-6">
+                      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                           {selectedSource && <selectedSource.icon className="text-indigo-600" size={24} />}
+                           <h3 className="font-semibold text-slate-800">Configure {selectedSource?.name} Connection</h3>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Source Path / URL</label>
+                            <input 
+                              type="text" 
+                              value={config.path}
+                              onChange={(e) => setConfig({...config, path: e.target.value})}
+                              placeholder="s3://my-bucket/data or https://api..."
+                              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Authentication Token / Key</label>
+                            <input 
+                              type="password" 
+                              value={config.auth}
+                              onChange={(e) => setConfig({...config, auth: e.target.value})}
+                              placeholder="••••••••••••••••"
+                              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {step === 3 && (
+                    <div className="max-w-xl mx-auto">
+                      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6">
+                         <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <Clock size={20} className="text-indigo-600" /> Retrieval Frequency
+                         </h3>
+                         <div className="grid grid-cols-3 gap-3">
+                            {['realtime', 'daily', 'weekly'].map((opt) => (
+                               <button
+                                  key={opt}
+                                  onClick={() => setSchedule({...schedule, frequency: opt})}
+                                  className={`py-3 px-4 rounded-lg border text-sm font-medium capitalize transition-all ${schedule.frequency === opt ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 hover:border-indigo-200 text-slate-600'}`}
+                               >
+                                  {opt === 'realtime' ? 'Real-time' : opt}
+                               </button>
+                            ))}
+                         </div>
+                      </div>
+                      {schedule.frequency !== 'realtime' && (
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-top-4">
+                          <h3 className="font-semibold text-slate-800 mb-4">Run At</h3>
+                          <input 
+                            type="time" 
+                            value={schedule.time}
+                            onChange={(e) => setSchedule({...schedule, time: e.target.value})}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                          />
+                          <p className="text-xs text-slate-500 mt-2">Time is in UTC-5 (EST)</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="px-8 py-5 border-t border-slate-100 bg-white flex justify-between items-center">
+                   <button 
+                      onClick={() => step > 1 ? setStep(step - 1) : onClose()}
+                      className="text-slate-500 hover:text-slate-800 font-medium text-sm px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                   >
+                      {step === 1 ? 'Cancel' : 'Back'}
+                   </button>
+                   <div className="flex items-center gap-2">
+                      <div className="flex gap-1 mr-4">
+                         {[1, 2, 3].map(i => (
+                            <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i === step ? 'bg-indigo-600' : 'bg-slate-200'}`} />
+                         ))}
+                      </div>
+                      <button 
+                        onClick={handleNext}
+                        disabled={step === 1 && !selectedSource}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {step === 3 ? 'Activate Schedule' : 'Next Step'}
+                        {step !== 3 && <ArrowRight size={16} />}
+                      </button>
+                   </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // ... Main App (simplified for brevity, full logic in original artifact) ...
+        // Note: For the full App component, refer to the previous artifact block.
+        // We will just mount the `App` here.
+
+        function App() {
+          // Paste the full App component logic from the artifact here
+          // For simplicity in this single file demo, I'll assume the App component
+          // is defined as per the React code provided.
+          
+          const [view, setView] = useState('list'); 
+          const [activeTab, setActiveTab] = useState('anchors');
+          const [anchors, setAnchors] = useState(INITIAL_ANCHORS);
+          const [enrichments, setEnrichments] = useState(INITIAL_ENRICHMENTS);
+          const [patterns, setPatterns] = useState(INITIAL_PATTERNS);
+          const [pipelines, setPipelines] = useState(INITIAL_PIPELINES);
+          const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
+          const [mappingTemplates, setMappingTemplates] = useState(INITIAL_MAPPING_TEMPLATES);
+          const [aggregations, setAggregations] = useState(INITIAL_AGGREGATIONS);
+          const [selectedEnrichment, setSelectedEnrichment] = useState(null);
+          const [selectedPattern, setSelectedPattern] = useState(null);
+          const [editingTemplate, setEditingTemplate] = useState(null);
+          const [activeTemplateTab, setActiveTemplateTab] = useState('models'); 
+          const [showAutoModal, setShowAutoModal] = useState(false);
+          const [showRetrievalModal, setShowRetrievalModal] = useState(false);
+          const [showCreateEnrichmentModal, setShowCreateEnrichmentModal] = useState(false);
+          const [showDataModelModal, setShowDataModelModal] = useState(false);
+          const [showSelectDataModelModal, setShowSelectDataModelModal] = useState(false);
+          const [showAggregationModal, setShowAggregationModal] = useState(false);
+          const [activePatternTokenIndex, setActivePatternTokenIndex] = useState(null);
+          const [anchorName, setAnchorName] = useState('');
+          const [anchorDesc, setAnchorDesc] = useState('');
+          const [selectedCampaigns, setSelectedCampaigns] = useState([]);
+          const [aiPrompt, setAiPrompt] = useState('');
+          const [isAiLoading, setIsAiLoading] = useState(false);
+          const [aiSuggestions, setAiSuggestions] = useState(null);
+          const [isDescGenerating, setIsDescGenerating] = useState(false);
+          const [patternSample, setPatternSample] = useState('');
+          const [patternTokens, setPatternTokens] = useState([]);
+          const [pipelineStep, setPipelineStep] = useState(1);
+          const [newPipelineConfig, setNewPipelineConfig] = useState({ source: null, targetModel: '', schedule: 'Daily' });
+          const [selectedMappingTemplateId, setSelectedMappingTemplateId] = useState('');
+
+          // ... (Include all handler functions from the React artifact) ...
+          
+          const handleCreateNew = () => {
+            if (activeTab === 'pipelines') {
+                setPipelineStep(1);
+                setNewPipelineConfig({ source: null, targetModel: '', schedule: 'Daily' });
+                setView('pipeline_builder');
+            } else {
+                setAnchorName('');
+                setAnchorDesc('');
+                setSelectedCampaigns([]);
+                setAiSuggestions(null);
+                setAiPrompt('');
+                setView('builder');
+            }
+          };
+
+          const handleSaveAnchor = () => {
+            const newAnchor = {
+              id: `ANC-00${anchors.length + 1}`,
+              name: anchorName || 'Untitled Anchor',
+              status: 'Active',
+              campaignCount: selectedCampaigns.length,
+              totalSpend: '$45k', 
+              roas: 'N/A'
+            };
+            setAnchors([...anchors, newAnchor]);
+            setView('list');
+          };
+
+          const handleRunAi = async () => {
+            if (!aiPrompt) return;
+            setIsAiLoading(true);
+            setAiSuggestions(null);
+
+            const campaignsContext = JSON.stringify(INITIAL_CAMPAIGNS.map(c => ({
+                id: c.id,
+                name: c.name,
+                channel: c.channel,
+                objective: c.objective,
+                date: c.date,
+                spend: c.spend
+            })));
+
+            const systemPrompt = `
+              You are an expert Marketing Data Analyst AI. 
+              You have access to a list of marketing campaigns: ${campaignsContext}
+              User Query: "${aiPrompt}"
+              Instructions: Return valid JSON with "matches" array containing id, confidence, rationale.
+            `;
+
+            try {
+                // In a real deployed app, you'd use a proxy or secure backend.
+                // For this static demo, we'll simulate a response or use the key if provided.
+                const resultText = await callGemini(systemPrompt);
+                
+                if (resultText) {
+                    const cleanedText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const responseJson = JSON.parse(cleanedText);
+                    if (responseJson.matches && Array.isArray(responseJson.matches)) {
+                        const matches = responseJson.matches.map(match => {
+                            const original = INITIAL_CAMPAIGNS.find(c => c.id === match.id);
+                            return original ? { ...original, ...match } : null;
+                        }).filter(Boolean);
+                        setAiSuggestions(matches);
+                    } else {
+                        setAiSuggestions([]);
+                    }
+                } else {
+                    // Fallback Mock
+                    setTimeout(() => {
+                         const results = INITIAL_CAMPAIGNS.slice(0, 3).map(c => ({
+                            ...c,
+                            confidence: 88,
+                            rationale: "Matched based on keywords."
+                         }));
+                         setAiSuggestions(results);
+                         setIsAiLoading(false);
+                    }, 1000);
+                }
+            } catch (e) {
+                console.error("AI Parse Error", e);
+                setAiSuggestions([]); 
+            } finally {
+                setIsAiLoading(false);
+            }
+          };
+
+          // ... (Include other handlers: handleGenerateDescription, handleAcceptAutoSuggestion, etc.) ...
+          const handleGenerateDescription = async () => {
+            if (selectedCampaigns.length === 0) return;
+            setIsDescGenerating(true);
+            const description = await callGemini("Draft description...");
+            if (description) setAnchorDesc(description.trim());
+            else setAnchorDesc("Automated description generation requires an API key.");
+            setIsDescGenerating(false);
+          };
+
+          const handleAcceptAutoSuggestion = (suggestion) => {
+            const newAnchor = {
+              id: `ANC-00${anchors.length + 1}`,
+              name: suggestion.suggestedName,
+              status: 'Active',
+              campaignCount: suggestion.campaigns.length,
+              totalSpend: '$45k',
+              roas: '2.5'
+            };
+            setAnchors([newAnchor, ...anchors]);
+            setShowAutoModal(false);
+          };
+
+          const handleSavePipeline = (pipelineData) => {
+            if (selectedEnrichment) {
+                const updatedEnrichments = enrichments.map(e => 
+                    e.id === selectedEnrichment.id ? { ...e, ...pipelineData } : e
+                );
+                setEnrichments(updatedEnrichments);
+                setSelectedEnrichment({ ...selectedEnrichment, ...pipelineData });
+            }
+            setShowRetrievalModal(false);
+          };
+
+          const handleCreateEnrichment = (data) => {
+              const newId = `ENR-00${enrichments.length + 1}`;
+              const newEnrichment = {
+                  id: newId,
+                  name: data.name,
+                  source: data.source,
+                  schedule: 'Manual',
+                  status: 'Active',
+                  lastRun: 'Never',
+                  description: `Custom enrichment created for ${data.source}`
+              };
+              setEnrichments([...enrichments, newEnrichment]);
+              if (activePatternTokenIndex !== null) {
+                  const newTokens = [...patternTokens];
+                  newTokens[activePatternTokenIndex] = { 
+                      ...newTokens[activePatternTokenIndex], 
+                      enrichmentId: newId 
+                  };
+                  setPatternTokens(newTokens);
+              }
+              setShowCreateEnrichmentModal(false);
+              setActivePatternTokenIndex(null);
+          };
+
+          const handleCreateTemplate = (templateData) => {
+              if (templateData.id) {
+                  setTemplates(templates.map(t => t.id === templateData.id ? { ...t, name: templateData.name, fields: templateData.fields } : t));
+              } else {
+                  const newTemplate = {
+                      id: `TPL-00${templates.length + 1}`,
+                      name: templateData.name,
+                      description: 'Custom user-defined model.',
+                      fields: templateData.fields
+                  };
+                  setTemplates([...templates, newTemplate]);
+                  setNewPipelineConfig({...newPipelineConfig, targetModel: newTemplate.name});
+              }
+              setShowDataModelModal(false);
+              setEditingTemplate(null);
+          };
+
+          const saveNewPipeline = () => {
+              const newPipeline = {
+                  id: `PL-10${pipelines.length + 1}`,
+                  name: `${newPipelineConfig.source?.name || 'Custom'} Pipeline`,
+                  source: newPipelineConfig.source?.name,
+                  targetModel: newPipelineConfig.targetModel,
+                  schedule: newPipelineConfig.schedule,
+                  status: 'Active'
+              };
+              setPipelines([...pipelines, newPipeline]);
+              setView('list');
+          };
+
+          const handleSaveMappingTemplate = () => {
+              const newMappingTemplate = {
+                  id: `MP-00${mappingTemplates.length + 1}`,
+                  name: `${newPipelineConfig.source?.name || 'Custom'} to ${newPipelineConfig.targetModel} Map`,
+                  targetModel: newPipelineConfig.targetModel,
+                  mapping: {} 
+              };
+              setMappingTemplates([...mappingTemplates, newMappingTemplate]);
+              alert("Mapping saved as template!");
+          };
+
+          const handleCreateAggregation = (aggData) => {
+              const newAggregation = {
+                  id: `AGG-00${aggregations.length + 1}`,
+                  name: aggData.name,
+                  sourceObject: aggData.sourceObject,
+                  summaryObject: aggData.summaryObject,
+                  frequency: aggData.frequency,
+                  scope: aggData.scope,
+                  lastRun: 'Pending',
+                  status: 'Active'
+              };
+              setAggregations([...aggregations, newAggregation]);
+              setShowAggregationModal(false);
+          };
+
+          const openEnrichmentDetails = (enrichment) => {
+              setSelectedEnrichment(enrichment);
+              setView('enrichment_details');
+          };
+
+          const openPatternDetails = (pattern) => {
+              setSelectedPattern(pattern);
+              setPatternSample(pattern.example);
+              setPatternTokens(pattern.tokens);
+              setView('pattern_details');
+          };
+
+          const updateTokenConfig = (index, field, value) => {
+              const newTokens = [...patternTokens];
+              newTokens[index] = { ...newTokens[index], [field]: value };
+              setPatternTokens(newTokens);
+          };
+
+          const handleDeleteTemplate = (id) => {
+              setTemplates(templates.filter(t => t.id !== id));
+          };
+
+          const handleDeleteMappingTemplate = (id) => {
+              setMappingTemplates(mappingTemplates.filter(t => t.id !== id));
+          };
+
+          return (
+            <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
+              <Sidebar activeTab={activeTab} setActiveTab={(tab) => {
+                  setActiveTab(tab);
+                  setView('list');
+              }} />
+
+              <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+                {/* Header */}
+                <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-10">
+                  <div className="flex items-center gap-4">
+                     {(view !== 'list') && (
+                       <button onClick={() => setView('list')} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                         <ArrowLeft size={20} className="text-slate-500" />
+                       </button>
+                     )}
+                     <h2 className="text-xl font-semibold text-slate-800">
+                       {view === 'enrichment_details' ? selectedEnrichment?.name :
+                        view === 'pattern_details' ? selectedPattern?.name :
+                        view === 'pipeline_builder' ? 'New Data Pipeline' :
+                        (view === 'list' ? (activeTab === 'anchors' ? 'Anchor Campaigns' : (activeTab === 'data_enrichments' ? 'Data Enrichments' : (activeTab === 'patterns' ? 'Patterns' : (activeTab === 'aggregations' ? 'Data Aggregation' : (activeTab === 'templates' ? 'Template Hub' : 'Data Pipelines'))))) : 'New Anchor Campaign')
+                       }
+                     </h2>
+                  </div>
+                  <div className="flex items-center gap-4">
+                     <span className="text-sm text-slate-500 hidden sm:inline-block">Marketing on Core User</span>
+                     <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs border border-indigo-200">
+                       MC
+                     </div>
+                  </div>
+                </header>
+
+                {/* --- LIST VIEW --- */}
+                {view === 'list' && (
+                  <div className="flex-1 p-8 overflow-y-auto">
+                    {/* ... (Render list views based on activeTab) ... */}
+                    {activeTab === 'pipelines' && (
+                       <div className="max-w-6xl mx-auto">
+                          <div className="flex justify-between items-center mb-6">
+                            <div>
+                               <h2 className="text-lg font-bold text-slate-800">Data Pipelines</h2>
+                               <p className="text-slate-500 text-sm">Manage data ingestion from external sources.</p>
+                            </div>
+                            <button onClick={handleCreateNew} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors">
+                                <Plus size={18} /> New Pipeline
+                            </button>
+                          </div>
+                          <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                            <table className="w-full text-left">
+                              <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Pipeline Name</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Source</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Target Model</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Schedule</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {pipelines.map((pl) => (
+                                  <tr key={pl.id} className="hover:bg-slate-50 transition-colors">
+                                     <td className="px-6 py-4">
+                                       <div className="font-medium text-slate-800">{pl.name}</div>
+                                       <div className="text-xs text-slate-400 font-mono mt-1">{pl.id}</div>
+                                     </td>
+                                     <td className="px-6 py-4">
+                                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-sm font-medium bg-slate-100 text-slate-700">
+                                           {pl.source}
+                                        </span>
+                                     </td>
+                                     <td className="px-6 py-4 text-sm text-slate-600">{pl.targetModel}</td>
+                                     <td className="px-6 py-4 text-sm text-slate-600">{pl.schedule}</td>
+                                     <td className="px-6 py-4">
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{pl.status}</span>
+                                     </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                       </div>
+                    )}
+                    {/* ... other tabs ... */}
+                    {activeTab === 'templates' && (
+                       <div className="max-w-6xl mx-auto">
+                          <div className="flex justify-between items-center mb-6">
+                            <div><h2 className="text-lg font-bold text-slate-800">Template Hub</h2><p className="text-slate-500 text-sm">Central repository for data schemas and mapping configurations.</p></div>
+                            <div className="flex bg-slate-100 p-1 rounded-lg">
+                                <button onClick={() => setActiveTemplateTab('models')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTemplateTab === 'models' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Data Models</button>
+                                <button onClick={() => setActiveTemplateTab('mappings')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTemplateTab === 'mappings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Mapping Templates</button>
+                            </div>
+                          </div>
+                          {activeTemplateTab === 'models' ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {templates.map((tpl) => (
+                                <div key={tpl.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all group relative">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Table size={20} /></div>
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => { setEditingTemplate(tpl); setShowDataModelModal(true); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"><Pencil size={14} /></button>
+                                            <button onClick={() => handleDeleteTemplate(tpl.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 size={14} /></button>
+                                        </div>
+                                    </div>
+                                    <h3 className="font-semibold text-slate-900 mb-1">{tpl.name}</h3>
+                                    <p className="text-sm text-slate-500 line-clamp-2 mb-4">{tpl.description}</p>
+                                    <div className="flex items-center gap-4 text-xs text-slate-400"><span className="flex items-center gap-1"><Columns size={12} /> {tpl.fields.length} Fields</span></div>
+                                </div>
+                                ))}
+                              </div>
+                          ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {mappingTemplates.map((mapTpl) => (
+                                    <div key={mapTpl.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all group relative">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="p-2 bg-purple-50 rounded-lg text-purple-600"><GitMerge size={20} /></div>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => handleDeleteMappingTemplate(mapTpl.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 size={14} /></button>
+                                            </div>
+                                        </div>
+                                        <h3 className="font-semibold text-slate-900 mb-1">{mapTpl.name}</h3>
+                                        <p className="text-sm text-slate-500 mb-4">Maps to: <span className="font-medium text-slate-700">{mapTpl.targetModel}</span></p>
+                                    </div>
+                                  ))}
+                              </div>
+                          )}
+                       </div>
+                    )}
+                    {activeTab === 'aggregations' && (
+                       <div className="max-w-6xl mx-auto">
+                          <div className="flex justify-between items-center mb-6">
+                            <div><h2 className="text-lg font-bold text-slate-800">Aggregation Jobs</h2><p className="text-slate-500 text-sm">Schedule and manage data summarization tasks.</p></div>
+                            <button onClick={() => setShowAggregationModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"><Plus size={18} /> New Job</button>
+                          </div>
+                          <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                            <table className="w-full text-left"><thead className="bg-slate-50 border-b border-slate-200"><tr><th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Job Name</th><th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Source Object</th><th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Frequency</th><th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{aggregations.map((agg) => (<tr key={agg.id} className="hover:bg-slate-50 transition-colors"><td className="px-6 py-4"><div className="font-medium text-slate-800">{agg.name}</div><div className="text-xs text-slate-400 font-mono mt-1">{agg.id}</div></td><td className="px-6 py-4 text-sm text-slate-600 font-mono text-xs">{agg.sourceObject}</td><td className="px-6 py-4 text-sm text-slate-600">{agg.frequency}</td><td className="px-6 py-4"><span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{agg.status}</span></td></tr>))}</tbody></table>
+                          </div>
+                       </div>
+                    )}
+                    {/* ... other list views ... */}
+                  </div>
+                )}
+
+                {/* ... (Render other views: pipeline_builder, etc. based on state) ... */}
+                {view === 'pipeline_builder' && (
+                    <div className="flex-1 bg-slate-50 flex flex-col overflow-hidden">
+                        {/* Stepper */}
+                        <div className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                {[1, 2, 3].map(step => (
+                                    <div key={step} className="flex items-center gap-2">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${pipelineStep === step ? 'bg-indigo-600 text-white' : pipelineStep > step ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                            {pipelineStep > step ? <Check size={16} /> : step}
+                                        </div>
+                                        <span className={`text-sm font-medium ${pipelineStep === step ? 'text-slate-800' : 'text-slate-400'}`}>{step === 1 ? 'Connect' : step === 2 ? 'Map Data' : 'Schedule'}</span>
+                                        {step < 3 && <div className="w-8 h-px bg-slate-200 mx-2"></div>}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setView('list')} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium">Cancel</button>
+                                <button onClick={() => { if (pipelineStep < 3) setPipelineStep(pipelineStep + 1); else saveNewPipeline(); }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2">{pipelineStep === 3 ? 'Activate Pipeline' : 'Next Step'} <ArrowRight size={16} /></button>
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-8">
+                            <div className="max-w-4xl mx-auto">
+                                {pipelineStep === 1 && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {SOURCE_OPTIONS.map((source) => (<div key={source.id} onClick={() => setNewPipelineConfig({...newPipelineConfig, source})} className={`p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md bg-white flex flex-col items-center text-center gap-3 ${newPipelineConfig.source?.id === source.id ? 'border-indigo-600 ring-4 ring-indigo-50' : 'border-slate-200 hover:border-indigo-200'}`}><div className={`p-3 rounded-full ${newPipelineConfig.source?.id === source.id ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}><source.icon size={32} /></div><div><h3 className={`font-semibold ${newPipelineConfig.source?.id === source.id ? 'text-indigo-900' : 'text-slate-800'}`}>{source.name}</h3><p className="text-xs text-slate-500 mt-1">{source.description}</p></div></div>))}
+                                    </div>
+                                )}
+                                {pipelineStep === 2 && (
+                                    <div className="space-y-6">
+                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                            <div className="flex justify-between items-center mb-6">
+                                                <div><h3 className="font-semibold text-slate-800">Map Source to Target</h3><p className="text-sm text-slate-500 mt-1">Select a model and map your fields.</p></div>
+                                                <div className="flex items-center gap-3">
+                                                    {newPipelineConfig.targetModel ? (<div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-700 font-medium"><BookTemplate size={16} />{newPipelineConfig.targetModel}</div>) : (<span className="text-sm text-slate-400 italic">No model selected</span>)}
+                                                    <button onClick={() => setShowSelectDataModelModal(true)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">{newPipelineConfig.targetModel ? 'Switch Model' : 'Select Model'}</button>
+                                                </div>
+                                            </div>
+                                            {newPipelineConfig.targetModel && (
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <select value={selectedMappingTemplateId} onChange={(e) => setSelectedMappingTemplateId(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500 min-w-[200px]"><option value="">Load Mapping Template...</option>{mappingTemplates.filter(mt => mt.targetModel === newPipelineConfig.targetModel).map(mt => (<option key={mt.id} value={mt.id}>{mt.name}</option>))}</select>
+                                                        </div>
+                                                        <button onClick={handleSaveMappingTemplate} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"><Save size={14} /> Save as Template</button>
+                                                    </div>
+                                                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                                                        <table className="w-full text-left">
+                                                            <thead className="bg-slate-50 border-b border-slate-200"><tr><th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Target Field</th><th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Data Type</th><th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Source Column</th></tr></thead>
+                                                            <tbody className="divide-y divide-slate-100">
+                                                                {templates.find(t => t.name === newPipelineConfig.targetModel)?.fields.map((field, idx) => (
+                                                                    <tr key={idx}>
+                                                                        <td className="px-6 py-4 text-sm font-medium text-slate-700">{field.name}</td>
+                                                                        <td className="px-6 py-4 text-xs text-slate-500 font-mono">{field.type}</td>
+                                                                        <td className="px-6 py-4"><select className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm bg-slate-50 text-slate-600" defaultValue={selectedMappingTemplateId ? mappingTemplates.find(mt => mt.id === selectedMappingTemplateId)?.mapping[field.name] : ""}><option value="">Select source field...</option><option value={`csv_col_${idx+1}`}>csv_col_{idx+1}</option><option value={`header_${field.name.toLowerCase()}`}>header_{field.name.toLowerCase()}</option></select></td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                {/* ... Step 3 ... */}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+              </main>
+
+              {/* MODALS */}
+              <AutonomousModal isOpen={showAutoModal} onClose={() => setShowAutoModal(false)} suggestions={AUTONOMOUS_SUGGESTIONS} onAccept={handleAcceptAutoSuggestion} />
+              <RetrievalModal isOpen={showRetrievalModal} onClose={() => setShowRetrievalModal(false)} onSave={handleSavePipeline} selectedEnrichment={selectedEnrichment} />
+              <CreateEnrichmentModal isOpen={showCreateEnrichmentModal} onClose={() => setShowCreateEnrichmentModal(false)} onSave={handleCreateEnrichment} />
+              <CreateDataModelModal isOpen={showDataModelModal} onClose={() => setShowDataModelModal(false)} onSave={handleCreateTemplate} initialData={editingTemplate} />
+              <SelectDataModelModal isOpen={showSelectDataModelModal} onClose={() => setShowSelectDataModelModal(false)} onSelect={(modelName) => { setNewPipelineConfig({...newPipelineConfig, targetModel: modelName}); setShowSelectDataModelModal(false); }} templates={templates} onCreateNew={() => { setEditingTemplate(null); setShowSelectDataModelModal(false); setShowDataModelModal(true); }} />
+              <AggregationJobModal isOpen={showAggregationModal} onClose={() => setShowAggregationModal(false)} onSave={handleCreateAggregation} />
+            </div>
+          );
+        }
+
+        const container = document.getElementById('root');
+        const root = createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
