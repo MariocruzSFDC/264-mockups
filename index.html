@@ -198,12 +198,10 @@
         ];
 
         // --- API Helper ---
-        // Note: In a static GitHub Page, this API key needs to be managed carefully or a proxy used. 
-        // For this demo, we'll keep it empty or use a placeholder.
         const callGemini = async (prompt) => {
           try {
-            const apiKey = ""; // Set API Key here for local testing or use environment variable pattern if supported
-            if (!apiKey) return null; // Prevent errors if no key
+            const apiKey = ""; 
+            if (!apiKey) return null; 
 
             const response = await fetch(
               `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
@@ -1079,17 +1077,11 @@
           );
         };
 
-        // ... Main App (simplified for brevity, full logic in original artifact) ...
-        // Note: For the full App component, refer to the previous artifact block.
-        // We will just mount the `App` here.
-
         function App() {
-          // Paste the full App component logic from the artifact here
-          // For simplicity in this single file demo, I'll assume the App component
-          // is defined as per the React code provided.
-          
-          const [view, setView] = useState('list'); 
+          const [view, setView] = useState('list'); // 'list' | 'builder' | 'enrichment_details' | 'pattern_details' | 'pipeline_builder'
           const [activeTab, setActiveTab] = useState('anchors');
+          
+          // Data
           const [anchors, setAnchors] = useState(INITIAL_ANCHORS);
           const [enrichments, setEnrichments] = useState(INITIAL_ENRICHMENTS);
           const [patterns, setPatterns] = useState(INITIAL_PATTERNS);
@@ -1097,17 +1089,27 @@
           const [templates, setTemplates] = useState(INITIAL_TEMPLATES);
           const [mappingTemplates, setMappingTemplates] = useState(INITIAL_MAPPING_TEMPLATES);
           const [aggregations, setAggregations] = useState(INITIAL_AGGREGATIONS);
+          
+          // Selection
           const [selectedEnrichment, setSelectedEnrichment] = useState(null);
           const [selectedPattern, setSelectedPattern] = useState(null);
           const [editingTemplate, setEditingTemplate] = useState(null);
-          const [activeTemplateTab, setActiveTemplateTab] = useState('models'); 
+          
+          // Template Hub
+          const [activeTemplateTab, setActiveTemplateTab] = useState('models'); // 'models' | 'mappings'
+
+          // Modals
           const [showAutoModal, setShowAutoModal] = useState(false);
           const [showRetrievalModal, setShowRetrievalModal] = useState(false);
           const [showCreateEnrichmentModal, setShowCreateEnrichmentModal] = useState(false);
           const [showDataModelModal, setShowDataModelModal] = useState(false);
           const [showSelectDataModelModal, setShowSelectDataModelModal] = useState(false);
           const [showAggregationModal, setShowAggregationModal] = useState(false);
+          
+          // State for Pattern Editor logic
           const [activePatternTokenIndex, setActivePatternTokenIndex] = useState(null);
+           
+          // Builder State
           const [anchorName, setAnchorName] = useState('');
           const [anchorDesc, setAnchorDesc] = useState('');
           const [selectedCampaigns, setSelectedCampaigns] = useState([]);
@@ -1115,14 +1117,17 @@
           const [isAiLoading, setIsAiLoading] = useState(false);
           const [aiSuggestions, setAiSuggestions] = useState(null);
           const [isDescGenerating, setIsDescGenerating] = useState(false);
+
+          // Pattern Editor State
           const [patternSample, setPatternSample] = useState('');
           const [patternTokens, setPatternTokens] = useState([]);
+
+          // Pipeline Builder State
           const [pipelineStep, setPipelineStep] = useState(1);
           const [newPipelineConfig, setNewPipelineConfig] = useState({ source: null, targetModel: '', schedule: 'Daily' });
           const [selectedMappingTemplateId, setSelectedMappingTemplateId] = useState('');
 
-          // ... (Include all handler functions from the React artifact) ...
-          
+          // Handlers
           const handleCreateNew = () => {
             if (activeTab === 'pipelines') {
                 setPipelineStep(1);
@@ -1144,7 +1149,7 @@
               name: anchorName || 'Untitled Anchor',
               status: 'Active',
               campaignCount: selectedCampaigns.length,
-              totalSpend: '$45k', 
+              totalSpend: '$45k', // Mock calc
               roas: 'N/A'
             };
             setAnchors([...anchors, newAnchor]);
@@ -1156,6 +1161,7 @@
             setIsAiLoading(true);
             setAiSuggestions(null);
 
+            // Build the prompt context
             const campaignsContext = JSON.stringify(INITIAL_CAMPAIGNS.map(c => ({
                 id: c.id,
                 name: c.name,
@@ -1167,55 +1173,79 @@
 
             const systemPrompt = `
               You are an expert Marketing Data Analyst AI. 
-              You have access to a list of marketing campaigns: ${campaignsContext}
+              You have access to a list of marketing campaigns. 
+              Your job is to identify which campaigns match the user's natural language query.
+              
+              Here is the dataset of campaigns: ${campaignsContext}
+
               User Query: "${aiPrompt}"
-              Instructions: Return valid JSON with "matches" array containing id, confidence, rationale.
+
+              Instructions:
+              1. Analyze the query to understand the user's intent (e.g., specific channels, dates, objectives, or keywords).
+              2. Return a JSON object with a single key "matches".
+              3. "matches" should be an array of objects, each containing:
+                 - "id": The campaign ID matched.
+                 - "confidence": A number between 0 and 100 indicating how strong the match is.
+                 - "rationale": A very brief (max 10 words) explanation of why it matched.
+              4. Only return valid JSON. Do not include markdown formatting.
             `;
 
             try {
-                // In a real deployed app, you'd use a proxy or secure backend.
-                // For this static demo, we'll simulate a response or use the key if provided.
                 const resultText = await callGemini(systemPrompt);
                 
+                // Cleanup response
                 if (resultText) {
                     const cleanedText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
                     const responseJson = JSON.parse(cleanedText);
+                    
                     if (responseJson.matches && Array.isArray(responseJson.matches)) {
+                        // Merge AI results with original data to display
                         const matches = responseJson.matches.map(match => {
                             const original = INITIAL_CAMPAIGNS.find(c => c.id === match.id);
                             return original ? { ...original, ...match } : null;
-                        }).filter(Boolean);
+                        }).filter(Boolean); // Remove nulls
+                        
                         setAiSuggestions(matches);
                     } else {
                         setAiSuggestions([]);
                     }
                 } else {
-                    // Fallback Mock
-                    setTimeout(() => {
+                    // Fallback for demo if API fails/empty
+                     setTimeout(() => {
                          const results = INITIAL_CAMPAIGNS.slice(0, 3).map(c => ({
                             ...c,
                             confidence: 88,
-                            rationale: "Matched based on keywords."
+                            rationale: "Matched based on keyword overlap in mock mode."
                          }));
                          setAiSuggestions(results);
                          setIsAiLoading(false);
-                    }, 1000);
+                     }, 1500);
                 }
             } catch (e) {
                 console.error("AI Parse Error", e);
+                // Fallback for demo if API fails/empty
                 setAiSuggestions([]); 
             } finally {
                 setIsAiLoading(false);
             }
           };
 
-          // ... (Include other handlers: handleGenerateDescription, handleAcceptAutoSuggestion, etc.) ...
           const handleGenerateDescription = async () => {
             if (selectedCampaigns.length === 0) return;
             setIsDescGenerating(true);
-            const description = await callGemini("Draft description...");
-            if (description) setAnchorDesc(description.trim());
-            else setAnchorDesc("Automated description generation requires an API key.");
+
+            const campaignList = selectedCampaigns.map(c => `${c.name} (${c.channel})`).join(", ");
+            const prompt = `
+              Write a professional, 1-sentence description for a Marketing Anchor Campaign that groups the following sub-campaigns: ${campaignList}. 
+              The description should summarize the common theme, objective, or timeframe.
+            `;
+
+            const description = await callGemini(prompt);
+            if (description) {
+                setAnchorDesc(description.trim());
+            } else {
+                setAnchorDesc("Automated description generation requires an API key in this demo.");
+            }
             setIsDescGenerating(false);
           };
 
@@ -1233,6 +1263,7 @@
           };
 
           const handleSavePipeline = (pipelineData) => {
+            // Update the selected enrichment with the new pipeline/automation data
             if (selectedEnrichment) {
                 const updatedEnrichments = enrichments.map(e => 
                     e.id === selectedEnrichment.id ? { ...e, ...pipelineData } : e
@@ -1254,7 +1285,11 @@
                   lastRun: 'Never',
                   description: `Custom enrichment created for ${data.source}`
               };
+              
+              // Update global enrichment list
               setEnrichments([...enrichments, newEnrichment]);
+              
+              // Automatically assign to the active token position
               if (activePatternTokenIndex !== null) {
                   const newTokens = [...patternTokens];
                   newTokens[activePatternTokenIndex] = { 
@@ -1263,14 +1298,17 @@
                   };
                   setPatternTokens(newTokens);
               }
+              
               setShowCreateEnrichmentModal(false);
               setActivePatternTokenIndex(null);
           };
 
           const handleCreateTemplate = (templateData) => {
               if (templateData.id) {
+                  // Edit existing
                   setTemplates(templates.map(t => t.id === templateData.id ? { ...t, name: templateData.name, fields: templateData.fields } : t));
               } else {
+                  // Create new
                   const newTemplate = {
                       id: `TPL-00${templates.length + 1}`,
                       name: templateData.name,
@@ -1302,7 +1340,7 @@
                   id: `MP-00${mappingTemplates.length + 1}`,
                   name: `${newPipelineConfig.source?.name || 'Custom'} to ${newPipelineConfig.targetModel} Map`,
                   targetModel: newPipelineConfig.targetModel,
-                  mapping: {} 
+                  mapping: {} // In a real app, we'd capture the actual form state here
               };
               setMappingTemplates([...mappingTemplates, newMappingTemplate]);
               alert("Mapping saved as template!");
@@ -1384,7 +1422,8 @@
                 {/* --- LIST VIEW --- */}
                 {view === 'list' && (
                   <div className="flex-1 p-8 overflow-y-auto">
-                    {/* ... (Render list views based on activeTab) ... */}
+                    
+                    {/* DATA PIPELINES VIEW */}
                     {activeTab === 'pipelines' && (
                        <div className="max-w-6xl mx-auto">
                           <div className="flex justify-between items-center mb-6">
@@ -1392,10 +1431,14 @@
                                <h2 className="text-lg font-bold text-slate-800">Data Pipelines</h2>
                                <p className="text-slate-500 text-sm">Manage data ingestion from external sources.</p>
                             </div>
-                            <button onClick={handleCreateNew} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors">
+                            <button 
+                                onClick={handleCreateNew}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
+                            >
                                 <Plus size={18} /> New Pipeline
                             </button>
                           </div>
+                          
                           <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
                             <table className="w-full text-left">
                               <thead className="bg-slate-50 border-b border-slate-200">
@@ -1416,13 +1459,19 @@
                                      </td>
                                      <td className="px-6 py-4">
                                         <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-sm font-medium bg-slate-100 text-slate-700">
+                                           {(() => {
+                                              const Icon = SOURCE_OPTIONS.find(s => s.name === pl.source)?.icon || Cloud;
+                                              return <Icon size={14} />;
+                                           })()}
                                            {pl.source}
                                         </span>
                                      </td>
                                      <td className="px-6 py-4 text-sm text-slate-600">{pl.targetModel}</td>
                                      <td className="px-6 py-4 text-sm text-slate-600">{pl.schedule}</td>
                                      <td className="px-6 py-4">
-                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{pl.status}</span>
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                            {pl.status}
+                                        </span>
                                      </td>
                                   </tr>
                                 ))}
@@ -1431,67 +1480,593 @@
                           </div>
                        </div>
                     )}
-                    {/* ... other tabs ... */}
+
+                    {/* TEMPLATE HUB VIEW */}
                     {activeTab === 'templates' && (
                        <div className="max-w-6xl mx-auto">
                           <div className="flex justify-between items-center mb-6">
-                            <div><h2 className="text-lg font-bold text-slate-800">Template Hub</h2><p className="text-slate-500 text-sm">Central repository for data schemas and mapping configurations.</p></div>
+                            <div>
+                               <h2 className="text-lg font-bold text-slate-800">Template Hub</h2>
+                               <p className="text-slate-500 text-sm">Central repository for data schemas and mapping configurations.</p>
+                            </div>
                             <div className="flex bg-slate-100 p-1 rounded-lg">
-                                <button onClick={() => setActiveTemplateTab('models')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTemplateTab === 'models' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Data Models</button>
-                                <button onClick={() => setActiveTemplateTab('mappings')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTemplateTab === 'mappings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Mapping Templates</button>
+                                <button 
+                                    onClick={() => setActiveTemplateTab('models')}
+                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTemplateTab === 'models' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Data Models
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTemplateTab('mappings')}
+                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTemplateTab === 'mappings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Mapping Templates
+                                </button>
                             </div>
                           </div>
+                          
                           {activeTemplateTab === 'models' ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {templates.map((tpl) => (
-                                <div key={tpl.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all group relative">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Table size={20} /></div>
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => { setEditingTemplate(tpl); setShowDataModelModal(true); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"><Pencil size={14} /></button>
-                                            <button onClick={() => handleDeleteTemplate(tpl.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 size={14} /></button>
+                              <>
+                                <div className="flex justify-end mb-4">
+                                    <button 
+                                        onClick={() => {
+                                            setEditingTemplate(null);
+                                            setShowDataModelModal(true);
+                                        }}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
+                                    >
+                                        <Plus size={18} /> Create Data Model
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {templates.map((tpl) => (
+                                    <div key={tpl.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all group relative">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                                            <Table size={20} />
+                                            </div>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={() => {
+                                                        setEditingTemplate(tpl);
+                                                        setShowDataModelModal(true);
+                                                    }}
+                                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors" title="Edit"
+                                                >
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDeleteTemplate(tpl.id)}
+                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <h3 className="font-semibold text-slate-900 mb-1">{tpl.name}</h3>
+                                        <p className="text-sm text-slate-500 line-clamp-2 mb-4">{tpl.description || 'No description provided.'}</p>
+                                        <div className="flex items-center gap-4 text-xs text-slate-400">
+                                            <span className="flex items-center gap-1"><Columns size={12} /> {tpl.fields.length} Fields</span>
+                                            <span>•</span>
+                                            <span>Updated 2 days ago</span>
                                         </div>
                                     </div>
-                                    <h3 className="font-semibold text-slate-900 mb-1">{tpl.name}</h3>
-                                    <p className="text-sm text-slate-500 line-clamp-2 mb-4">{tpl.description}</p>
-                                    <div className="flex items-center gap-4 text-xs text-slate-400"><span className="flex items-center gap-1"><Columns size={12} /> {tpl.fields.length} Fields</span></div>
+                                    ))}
                                 </div>
-                                ))}
-                              </div>
+                              </>
                           ) : (
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                   {mappingTemplates.map((mapTpl) => (
                                     <div key={mapTpl.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-all group relative">
                                         <div className="flex justify-between items-start mb-3">
-                                            <div className="p-2 bg-purple-50 rounded-lg text-purple-600"><GitMerge size={20} /></div>
+                                            <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
+                                            <GitMerge size={20} />
+                                            </div>
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => handleDeleteMappingTemplate(mapTpl.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 size={14} /></button>
+                                                <button 
+                                                    onClick={() => handleDeleteMappingTemplate(mapTpl.id)}
+                                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
                                             </div>
                                         </div>
                                         <h3 className="font-semibold text-slate-900 mb-1">{mapTpl.name}</h3>
                                         <p className="text-sm text-slate-500 mb-4">Maps to: <span className="font-medium text-slate-700">{mapTpl.targetModel}</span></p>
+                                        <div className="flex items-center gap-4 text-xs text-slate-400">
+                                            <span className="flex items-center gap-1"><List size={12} /> {Object.keys(mapTpl.mapping).length} Mapped Fields</span>
+                                        </div>
                                     </div>
                                   ))}
+                                  {/* Placeholder for creating new mapping template manually (optional future feature) */}
+                                  <div className="bg-slate-50 rounded-xl border border-dashed border-slate-300 p-6 flex flex-col items-center justify-center text-center text-slate-400 hover:border-indigo-300 hover:text-indigo-500 transition-colors cursor-pointer">
+                                      <Plus size={32} className="mb-2 opacity-50" />
+                                      <span className="text-sm font-medium">Create Mapping from Pipeline</span>
+                                      <span className="text-xs mt-1">Configure a pipeline to save a mapping template</span>
+                                  </div>
                               </div>
                           )}
                        </div>
                     )}
+
+                    {/* DATA AGGREGATION VIEW */}
                     {activeTab === 'aggregations' && (
                        <div className="max-w-6xl mx-auto">
                           <div className="flex justify-between items-center mb-6">
-                            <div><h2 className="text-lg font-bold text-slate-800">Aggregation Jobs</h2><p className="text-slate-500 text-sm">Schedule and manage data summarization tasks.</p></div>
-                            <button onClick={() => setShowAggregationModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"><Plus size={18} /> New Job</button>
+                            <div>
+                               <h2 className="text-lg font-bold text-slate-800">Aggregation Jobs</h2>
+                               <p className="text-slate-500 text-sm">Schedule and manage data summarization tasks.</p>
+                            </div>
+                            <button 
+                                onClick={() => setShowAggregationModal(true)}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
+                            >
+                                <Plus size={18} /> New Job
+                            </button>
                           </div>
+                          
                           <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                            <table className="w-full text-left"><thead className="bg-slate-50 border-b border-slate-200"><tr><th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Job Name</th><th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Source Object</th><th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Frequency</th><th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{aggregations.map((agg) => (<tr key={agg.id} className="hover:bg-slate-50 transition-colors"><td className="px-6 py-4"><div className="font-medium text-slate-800">{agg.name}</div><div className="text-xs text-slate-400 font-mono mt-1">{agg.id}</div></td><td className="px-6 py-4 text-sm text-slate-600 font-mono text-xs">{agg.sourceObject}</td><td className="px-6 py-4 text-sm text-slate-600">{agg.frequency}</td><td className="px-6 py-4"><span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{agg.status}</span></td></tr>))}</tbody></table>
+                            <table className="w-full text-left">
+                              <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Job Name</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Source Object</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Frequency</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Scope</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Last Run</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {aggregations.map((agg) => (
+                                  <tr key={agg.id} className="hover:bg-slate-50 transition-colors">
+                                     <td className="px-6 py-4">
+                                       <div className="font-medium text-slate-800">{agg.name}</div>
+                                       <div className="text-xs text-slate-400 font-mono mt-1">{agg.id}</div>
+                                     </td>
+                                     <td className="px-6 py-4 text-sm text-slate-600 font-mono text-xs">{agg.sourceObject}</td>
+                                     <td className="px-6 py-4 text-sm text-slate-600">{agg.frequency}</td>
+                                     <td className="px-6 py-4">
+                                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${agg.scope === 'Incremental' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
+                                            {agg.scope}
+                                        </span>
+                                     </td>
+                                     <td className="px-6 py-4 text-sm text-slate-500">{agg.lastRun}</td>
+                                     <td className="px-6 py-4">
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                            {agg.status}
+                                        </span>
+                                     </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                        </div>
                     )}
-                    {/* ... other list views ... */}
+
+                    {/* DATA ENRICHMENTS VIEW */}
+                    {activeTab === 'data_enrichments' && (
+                       <div className="max-w-6xl mx-auto">
+                          <div className="flex justify-between items-center mb-6">
+                            <div>
+                               <h2 className="text-lg font-bold text-slate-800">Active Enrichments</h2>
+                               <p className="text-slate-500 text-sm">Manage data transformation and retrieval processes.</p>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                            <table className="w-full text-left">
+                              <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Enrichment Name</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Source</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Schedule</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Last Run</th>
+                                  <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider text-right"></th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {enrichments.map((enr) => (
+                                  <tr 
+                                    key={enr.id} 
+                                    className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                    onClick={() => openEnrichmentDetails(enr)}
+                                  >
+                                     <td className="px-6 py-4">
+                                       <div className="font-medium text-slate-800">{enr.name}</div>
+                                       <div className="text-xs text-slate-400 font-mono mt-1">{enr.id}</div>
+                                     </td>
+                                     <td className="px-6 py-4">
+                                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-sm font-medium bg-slate-100 text-slate-700">
+                                           {(() => {
+                                              const Icon = SOURCE_OPTIONS.find(s => s.name === enr.source)?.icon || Cloud;
+                                              return <Icon size={14} />;
+                                           })()}
+                                           {enr.source}
+                                        </span>
+                                     </td>
+                                     <td className="px-6 py-4 text-sm text-slate-600">{enr.schedule}</td>
+                                     <td className="px-6 py-4 text-sm text-slate-500">{enr.lastRun}</td>
+                                     <td className="px-6 py-4 text-right">
+                                        <ChevronRight size={18} className="text-slate-400 ml-auto" />
+                                     </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                       </div>
+                    )}
+
+                    {/* PATTERNS VIEW */}
+                    {activeTab === 'patterns' && (
+                        <div className="max-w-6xl mx-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h2 className="text-lg font-bold text-slate-800">Naming Patterns</h2>
+                                    <p className="text-slate-500 text-sm">Define and extract dimensions from standard naming conventions.</p>
+                                </div>
+                                <button 
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
+                                >
+                                    <Plus size={18} /> New Pattern
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {patterns.map(ptn => (
+                                    <div 
+                                        key={ptn.id}
+                                        onClick={() => openPatternDetails(ptn)}
+                                        className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group"
+                                    >
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h3 className="font-semibold text-slate-900 text-lg group-hover:text-indigo-700 transition-colors">{ptn.name}</h3>
+                                                <p className="text-sm text-slate-500">Source: {ptn.sourceField}</p>
+                                            </div>
+                                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${ptn.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                                {ptn.status}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="bg-slate-50 rounded-lg p-3 mb-4 font-mono text-xs text-slate-600 border border-slate-100 flex items-center gap-2">
+                                            <span className="text-slate-400 select-none">Example:</span>
+                                            {ptn.example}
+                                        </div>
+
+                                        <div className="flex items-center justify-between text-xs text-slate-500">
+                                            <div className="flex items-center gap-4">
+                                                <span className="flex items-center gap-1"><List size={14}/> {ptn.tokens.length} Dimensions</span>
+                                                <span className="flex items-center gap-1"><GitMerge size={14}/> Delimiter: "{ptn.delimiter}"</span>
+                                            </div>
+                                            <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-400" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ANCHOR CAMPAIGNS VIEW */}
+                    {activeTab === 'anchors' && (
+                    <>
+                      {/* Autonomous Insight Banner */}
+                      <div className="mb-8 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between shadow-sm relative overflow-hidden group gap-4">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                          <Sparkles size={120} />
+                        </div>
+                        <div className="flex items-start gap-4 relative z-10">
+                          <div className="p-3 bg-white rounded-lg shadow-sm text-purple-600 hidden md:block">
+                            <Sparkles size={24} />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-slate-800">Einstein found new campaign groupings</h3>
+                            <p className="text-slate-600 mt-1 max-w-2xl">
+                              Our AI analyzed your unclassified campaigns and found 3 potential Anchor Campaigns based on shared objectives and timelines.
+                            </p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setShowAutoModal(true)}
+                          className="relative z-10 bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 font-medium px-5 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-2 whitespace-nowrap"
+                        >
+                          Review Suggestions <ChevronRight size={16} />
+                        </button>
+                      </div>
+
+                      {/* Controls */}
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div className="flex gap-3 w-full md:w-auto">
+                          <div className="relative flex-1 md:flex-none">
+                            <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                            <input 
+                              type="text" 
+                              placeholder="Search anchors..." 
+                              className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full md:w-64 transition-all"
+                            />
+                          </div>
+                          <button className="px-3 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 flex items-center gap-2 text-sm transition-colors">
+                            <Filter size={16} /> Filter
+                          </button>
+                        </div>
+                        <button 
+                          onClick={handleCreateNew}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors w-full md:w-auto justify-center"
+                        >
+                          <Plus size={18} /> Create Anchor Campaign
+                        </button>
+                      </div>
+
+                      {/* Table */}
+                      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left min-w-[800px]">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                              <tr>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Anchor Name</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider text-right">Sub-Campaigns</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider text-right">Total Spend</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider text-right">ROAS</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider"></th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {anchors.map((anchor) => (
+                                <tr key={anchor.id} className="hover:bg-slate-50 transition-colors group cursor-pointer">
+                                  <td className="px-6 py-4">
+                                    <div className="font-medium text-slate-800">{anchor.name}</div>
+                                    <div className="text-xs text-slate-400 font-mono mt-1">{anchor.id}</div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      {anchor.status}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-right text-slate-600">{anchor.campaignCount}</td>
+                                  <td className="px-6 py-4 text-right text-slate-600 font-medium">{anchor.totalSpend}</td>
+                                  <td className="px-6 py-4 text-right text-slate-600">{anchor.roas}</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <button className="text-slate-400 hover:text-indigo-600 transition-colors">
+                                      <MoreHorizontal size={18} />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </>
+                    )}
                   </div>
                 )}
 
-                {/* ... (Render other views: pipeline_builder, etc. based on state) ... */}
+                {/* --- ENRICHMENT RECORD PAGE VIEW --- */}
+                {view === 'enrichment_details' && selectedEnrichment && (
+                    <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
+                        <div className="max-w-5xl mx-auto">
+                            
+                            {/* Header with Title and Action Button */}
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                   <div className="flex items-center gap-3 mb-1">
+                                        <h1 className="text-2xl font-bold text-slate-900">{selectedEnrichment.name}</h1>
+                                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${selectedEnrichment.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                            {selectedEnrichment.status}
+                                        </span>
+                                   </div>
+                                   <p className="text-slate-500 text-base max-w-2xl">{selectedEnrichment.description}</p>
+                                </div>
+                                <div className="flex gap-3">
+                                   <button className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-slate-50 transition-colors shadow-sm">
+                                       Edit Details
+                                   </button>
+                                   <button 
+                                       onClick={() => setShowRetrievalModal(true)}
+                                       className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
+                                   >
+                                       <Clock size={16} /> 
+                                       {selectedEnrichment.schedule === 'Manual' ? 'Automate Retrieval' : 'Modify Schedule'}
+                                   </button>
+                                </div>
+                            </div>
+
+                            {/* Stats Grid */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+                                <div className="grid grid-cols-4 gap-6">
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Source System</p>
+                                        <div className="flex items-center gap-2 text-slate-800 font-medium">
+                                            <Cloud size={18} className="text-indigo-600" /> {selectedEnrichment.source}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Current Schedule</p>
+                                        <div className="flex items-center gap-2 text-slate-800 font-medium">
+                                            <Clock size={18} className="text-indigo-600" /> {selectedEnrichment.schedule}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Last Run</p>
+                                        <div className="flex items-center gap-2 text-slate-800 font-medium">
+                                            <Play size={18} className="text-indigo-600" /> {selectedEnrichment.lastRun}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">System ID</p>
+                                        <div className="font-mono text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded text-sm">
+                                            {selectedEnrichment.id}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Placeholder content for bottom area */}
+                            <div className="grid grid-cols-1 gap-6">
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 flex flex-col items-center justify-center text-center min-h-[300px]">
+                                     <div className="p-4 bg-slate-50 rounded-full mb-4">
+                                        <Activity size={32} className="text-slate-400" />
+                                     </div>
+                                     <h3 className="text-slate-800 font-medium mb-1">No Recent Activity Logs</h3>
+                                     <p className="text-slate-500 text-sm max-w-sm">
+                                        Run the enrichment manually or wait for the next scheduled retrieval to see processing logs here.
+                                     </p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                )}
+
+                {/* --- PATTERN EDITOR VIEW --- */}
+                {view === 'pattern_details' && selectedPattern && (
+                    <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
+                        <div className="max-w-6xl mx-auto">
+                            
+                            {/* Pattern Header */}
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <h1 className="text-2xl font-bold text-slate-900">{selectedPattern.name}</h1>
+                                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${selectedPattern.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                            {selectedPattern.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-slate-500 text-sm">
+                                        Extracting dimensions from <span className="font-mono bg-slate-200 px-1 rounded text-slate-700">{selectedPattern.sourceField}</span> using delimiter <span className="font-mono bg-slate-200 px-1 rounded text-slate-700 text-xs">{selectedPattern.delimiter}</span>
+                                    </p>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                     <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Validity:</span>
+                                        <div className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                            <Calendar size={14} className="text-indigo-600" />
+                                            {selectedPattern.validFrom || 'Start'} <ArrowRight size={12} className="text-slate-400"/> {selectedPattern.validTo || 'Indefinite'}
+                                        </div>
+                                     </div>
+                                     <div className="flex gap-2">
+                                        <button className="px-3 py-1.5 bg-white border border-slate-300 rounded-md text-slate-700 text-sm font-medium hover:bg-slate-50 shadow-sm flex items-center gap-2">
+                                            <Save size={14} /> Save
+                                        </button>
+                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Main Editor Card */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                                <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Test String Tokenizer</label>
+                                    <div className="flex gap-4">
+                                        <div className="flex-1 relative">
+                                            <input 
+                                                type="text" 
+                                                value={patternSample}
+                                                onChange={(e) => setPatternSample(e.target.value)}
+                                                className="w-full pl-4 pr-4 py-3 border border-slate-300 rounded-lg font-mono text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Token Visualizer */}
+                                <div className="p-8 bg-slate-50 overflow-x-auto">
+                                    <div className="flex items-start gap-2">
+                                        {patternSample.split(selectedPattern.delimiter).map((token, idx) => (
+                                            <div key={idx} className="flex flex-col items-center gap-2 min-w-[120px]">
+                                                <div className="bg-indigo-600 text-white font-mono text-sm px-4 py-2 rounded-lg shadow-md w-full text-center truncate">
+                                                    {token}
+                                                </div>
+                                                <div className="h-4 w-px bg-slate-300 border-l border-dashed border-slate-400"></div>
+                                                <div className="bg-white border border-slate-200 rounded-md px-2 py-1 text-xs font-semibold text-slate-500 shadow-sm">
+                                                    Pos {idx + 1}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Configuration Cards List */}
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Token Mapping Configuration</h3>
+                                
+                                {patternTokens.map((token, idx) => (
+                                    <div key={idx} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row gap-6 items-start">
+                                        <div className="flex items-center gap-4 w-full md:w-1/4">
+                                            <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center border border-slate-200">
+                                                {token.position}
+                                            </div>
+                                            <div className="flex-1">
+                                                <label className="block text-xs font-medium text-slate-500 mb-1">Dimension Name</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={token.name}
+                                                    onChange={(e) => updateTokenConfig(idx, 'name', e.target.value)}
+                                                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="w-px bg-slate-100 self-stretch hidden md:block"></div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 w-full">
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
+                                                    <ShieldCheck size={12} /> Validation List <span className="text-slate-300 font-normal">(Approved Values)</span>
+                                                </label>
+                                                <textarea 
+                                                    rows={2}
+                                                    value={token.validation || ''}
+                                                    onChange={(e) => updateTokenConfig(idx, 'validation', e.target.value)}
+                                                    placeholder="Enter comma-separated values (e.g. US, UK, CA)..."
+                                                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
+                                                    <Database size={12} /> Data Enrichment
+                                                </label>
+                                                <div className="flex gap-2">
+                                                    <select 
+                                                        value={token.enrichmentId || ''}
+                                                        onChange={(e) => updateTokenConfig(idx, 'enrichmentId', e.target.value)}
+                                                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                    >
+                                                        <option value="">-- No Enrichment --</option>
+                                                        {enrichments.map(e => (
+                                                            <option key={e.id} value={e.id}>{e.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setActivePatternTokenIndex(idx);
+                                                            setShowCreateEnrichmentModal(true);
+                                                        }}
+                                                        className="p-2 border border-slate-300 rounded-md text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                                                        title="Create New Enrichment"
+                                                    >
+                                                        <Plus size={16} />
+                                                    </button>
+                                                </div>
+                                                {token.enrichmentId && (
+                                                    <div className="mt-2 text-xs text-indigo-600 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded inline-flex">
+                                                        <Check size={10} /> Linked to active pipeline
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                        </div>
+                    </div>
+                )}
+
+                {/* --- PIPELINE BUILDER VIEW --- */}
                 {view === 'pipeline_builder' && (
                     <div className="flex-1 bg-slate-50 flex flex-col overflow-hidden">
                         {/* Stepper */}
@@ -1557,6 +2132,26 @@
                                     </div>
                                 )}
                                 {/* ... Step 3 ... */}
+                                {pipelineStep === 3 && (
+                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                        <h3 className="font-semibold text-slate-800 mb-4">Run Frequency</h3>
+                                        <div className="grid grid-cols-3 gap-3 mb-6">
+                                            {['Real-time', 'Daily', 'Weekly'].map((opt) => (
+                                                <button
+                                                    key={opt}
+                                                    onClick={() => setNewPipelineConfig({...newPipelineConfig, schedule: opt})}
+                                                    className={`py-3 px-4 rounded-lg border text-sm font-medium transition-all ${newPipelineConfig.schedule === opt ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 hover:border-indigo-200 text-slate-600'}`}
+                                                >
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="p-4 bg-blue-50 text-blue-700 text-sm rounded-lg flex gap-3 items-start">
+                                            <Info size={18} className="shrink-0 mt-0.5" />
+                                            <p>Based on your selection, this pipeline will run {newPipelineConfig.schedule}. Data will be ingested from <strong>{newPipelineConfig.source?.name}</strong> and mapped to <strong>{newPipelineConfig.targetModel}</strong>.</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
